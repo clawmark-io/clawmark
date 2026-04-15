@@ -58,5 +58,6 @@ Preview releases are automatic pre-releases built from `main`.
 - each push to `main` is rewritten in CI to `0.3.0-beta.N`
 - `N` comes from the GitHub Actions run number
 - preview releases are published as GitHub pre-releases for all supported Tauri desktop targets
+- Windows preview releases publish `nsis` installers only; `msi` is reserved for stable releases because WiX requires numeric-only prerelease identifiers
 
 Maintainers do not tag preview releases manually.

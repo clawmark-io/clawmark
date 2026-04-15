@@ -25,16 +25,22 @@ jobs:
         include:
           - platform: windows-latest
             target: x86_64-pc-windows-msvc
+            bundleArgs: --bundles nsis
           - platform: windows-11-arm
             target: aarch64-pc-windows-msvc
+            bundleArgs: --bundles nsis
           - platform: ubuntu-24.04
             target: x86_64-unknown-linux-gnu
+            bundleArgs: ""
           - platform: ubuntu-24.04-arm
             target: aarch64-unknown-linux-gnu
+            bundleArgs: ""
           - platform: macos-15-intel
             target: x86_64-apple-darwin
+            bundleArgs: ""
           - platform: macos-15
             target: aarch64-apple-darwin
+            bundleArgs: ""
 
     runs-on: ${{ matrix.platform }}
 
@@ -60,7 +66,8 @@ jobs:
             libwebkit2gtk-4.1-dev \
             libappindicator3-dev \
             librsvg2-dev \
-            patchelf
+            patchelf \
+            xdg-utils
 
       - name: Install dependencies
         run: npm ci
@@ -80,11 +87,13 @@ jobs:
           prerelease: true
           includeDebug: false
           includeRelease: true
-          args: --target ${{ matrix.target }}
+          args: --target ${{ matrix.target }} ${{ matrix.bundleArgs }}
 
   publish-preview-android:
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-24.04
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
     steps:
       - uses: actions/checkout@v6
@@ -119,16 +128,23 @@ jobs:
       - name: Set preview version
         run: npm run release:set-preview -- ${{ github.run_number }}
 
-      - name: Build and publish Android preview release
-        uses: tauri-apps/tauri-action@v0.6.0
+      - name: Read app version
+        id: version
+        run: echo "value=$(node -p "require('./package.json').version")" >> "$GITHUB_OUTPUT"
+
+      - name: Build Android preview release
+        run: npm run tauri -- android build --apk
+
+      - name: Publish Android preview release
+        uses: softprops/action-gh-release@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          mobile: android
-          tagName: preview-v__VERSION__
-          releaseName: Clawmark Preview v__VERSION__
-          releaseBody: Automated preview release for __VERSION__.
-          releaseDraft: false
+          tag_name: preview-v${{ steps.version.outputs.value }}
+          name: Clawmark Preview v${{ steps.version.outputs.value }}
+          body: Automated preview release for ${{ steps.version.outputs.value }}.
+          draft: false
           prerelease: true
-          includeDebug: false
-          includeRelease: true
+          files: |
+            src-tauri/gen/android/app/build/outputs/**/*.apk
+            src-tauri/gen/android/app/build/outputs/**/*.aab
