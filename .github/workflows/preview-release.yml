@@ -69,7 +69,7 @@ jobs:
         run: npm run release:set-preview -- ${{ github.run_number }}
 
       - name: Build and publish preview release
-        uses: tauri-apps/tauri-action@v1
+        uses: tauri-apps/tauri-action@v0.6.0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
@@ -120,7 +120,7 @@ jobs:
         run: npm run release:set-preview -- ${{ github.run_number }}
 
       - name: Build and publish Android preview release
-        uses: tauri-apps/tauri-action@v1
+        uses: tauri-apps/tauri-action@v0.6.0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
