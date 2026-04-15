@@ -1,0 +1,22 @@
+{
+  "name": "clawmark-cli",
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "bun run main.ts",
+    "build": "bun build main.ts --compile --outfile ../dist/clawmark",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@automerge/automerge": "^3.2.4",
+    "@automerge/automerge-repo": "^2.5.1",
+    "@automerge/automerge-repo-network-websocket": "^2.5.3",
+    "commander": "^13.0.0",
+    "nanoid": "^5.1.6",
+    "yaml": "^2.7.0"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "typescript": "~5.8.3"
+  }
+}

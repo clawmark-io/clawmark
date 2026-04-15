@@ -1,0 +1,25 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "dev",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["node_modules/vite/bin/vite.js", "--port", "5201"],
+      "port": 5201
+    },
+    {
+      "name": "sync-server",
+      "runtimeExecutable": "C:\\nodejs\\npm.cmd",
+      "runtimeArgs": ["run", "dev"],
+      "cwd": "sync-server",
+      "port": 3040,
+      "env": {
+        "HOST": "0.0.0.0",
+        "PORT": "3040",
+        "STORAGE_PATH": "./data",
+        "ACCESS_TOKEN": "change-me-to-a-secure-random-string",
+        "WORKSPACE_INDEX_MAX_BACKUPS": "100"
+      }
+    }
+  ]
+}

@@ -1,0 +1,1 @@
+All instructions starts in [AGENTS.md](AGENTS.md) file.

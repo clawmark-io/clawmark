@@ -1,0 +1,64 @@
+/* Theme preview mini-app mockup */
+.theme-preview {
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  border-radius: 4px;
+  display: flex;
+  overflow: hidden;
+  border: 1px solid var(--border-subtle);
+}
+
+.theme-preview-sidebar {
+  width: 20%;
+  padding: 4px 3px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+}
+
+.theme-preview-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.theme-preview-line {
+  width: 80%;
+  height: 2px;
+  border-radius: 1px;
+}
+
+.theme-preview-content {
+  flex: 1;
+  padding: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.theme-preview-header {
+  width: 40%;
+  height: 3px;
+  border-radius: 1px;
+}
+
+.theme-preview-card {
+  flex: 1;
+  border-radius: 2px;
+  padding: 3px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.theme-preview-card-line {
+  width: 70%;
+  height: 2px;
+  border-radius: 1px;
+}
+
+.theme-preview-card-line.short {
+  width: 40%;
+}

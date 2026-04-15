@@ -1,0 +1,6 @@
+host: "0.0.0.0"
+port: 3030
+storagePath: "./data"
+accessToken: "change-me-to-a-secure-random-string"
+workspaceIndex:
+  maxBackups: 100

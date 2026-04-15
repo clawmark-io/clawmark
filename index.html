@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Clawmark</title>
+    <meta property="og:title" content="Clawmark" />
+    <meta property="og:image" content="/twitter-card.svg" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Clawmark" />
+    <meta name="twitter:image" content="/twitter-card.svg" />
+  </head>
+
+  <body>
+    <div id="root"></div>
+    <script>
+      // Apply cached theme variables before first paint to prevent FOUC.
+      // Falls back to the dark CSS theme (data-theme="dark" on <html>).
+      (function () {
+        try {
+          var raw = localStorage.getItem("theme-vars");
+          if (!raw) return;
+          var data = JSON.parse(raw);
+          if (!data || !data.vars) return;
+          var html = document.documentElement;
+          html.setAttribute("data-theme", data.name || "dark");
+          if (data.colorScheme) html.style.setProperty("color-scheme", data.colorScheme);
+          var vars = data.vars;
+          for (var key in vars) {
+            if (Object.prototype.hasOwnProperty.call(vars, key)) {
+              html.style.setProperty(key, vars[key]);
+            }
+          }
+        } catch (e) { /* non-critical */ }
+      })();
+    </script>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
