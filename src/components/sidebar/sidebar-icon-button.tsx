@@ -1,4 +1,4 @@
-import type { LucideIcon } from "lucide-react";
+import { AlertTriangle, type LucideIcon } from "lucide-react";
 import {
   Tooltip,
   TooltipContent,
@@ -11,6 +11,8 @@ type SidebarIconButtonProps = {
   active?: boolean;
   disabled?: boolean;
   warning?: boolean;
+  warningTone?: "warning" | "error";
+  warningTooltip?: string;
   onClick?: () => void;
 };
 
@@ -20,8 +22,12 @@ export function SidebarIconButton({
   active = false,
   disabled = false,
   warning = false,
+  warningTone = "warning",
+  warningTooltip,
   onClick,
 }: SidebarIconButtonProps) {
+  const warningClassName = warningTone === "error" ? "text-error" : "text-warning";
+
   return (
     <Tooltip>
       <TooltipTrigger asChild>
@@ -34,11 +40,22 @@ export function SidebarIconButton({
         >
           <Icon size={20} />
           {warning ? (
-            <span className="absolute top-1 right-1 size-2 rounded-full bg-error" />
+            <span className={`absolute top-0.5 right-0.5 flex size-3.5 items-center justify-center rounded-full bg-base-100 ${warningClassName}`}>
+              <AlertTriangle size={12} fill="currentColor" strokeWidth={2.5} aria-hidden="true" />
+            </span>
           ) : null}
         </button>
       </TooltipTrigger>
-      <TooltipContent side="right">{label}</TooltipContent>
+      <TooltipContent side="right">
+        {warning && warningTooltip ? (
+          <div className="flex max-w-56 flex-col gap-1">
+            <span>{label}</span>
+            <span className={warningClassName}>{warningTooltip}</span>
+          </div>
+        ) : (
+          label
+        )}
+      </TooltipContent>
     </Tooltip>
   );
 }

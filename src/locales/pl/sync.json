@@ -10,6 +10,8 @@
   "disconnected": "Rozłączono",
   "never": "Nigdy",
   "lastSynced": "Ostatnia synchronizacja: {time}",
+  "dataNotSafelySyncedWarning": "Ta przestrzeń robocza nie jest bezpiecznie synchronizowana. Skonfiguruj synchronizację z chmurą lub lokalny serwer synchronizacji, aby chronić dane między urządzeniami.",
+  "webDataLossWithoutSyncWarning": "Bez aktywnej synchronizacji w tej sesji przeglądarki wszystkie dane mogą zostać utracone. Skonfiguruj synchronizację z chmurą lub lokalny serwer synchronizacji, zanim zaczniesz polegać na tej przestrzeni roboczej.",
   "noSyncServers": "Brak skonfigurowanych serwerów synchronizacji dla tej przestrzeni roboczej.",
   "addSyncServerDescription": "Dodaj serwer synchronizacji, aby utrzymywać dane przestrzeni roboczej zsynchronizowane między urządzeniami.",
   "addSyncServer": "Dodaj serwer synchronizacji",

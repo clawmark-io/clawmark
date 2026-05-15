@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { RefreshCw, Pencil, Trash2, Server } from "lucide-react";
+import { AlertTriangle, RefreshCw, Pencil, Trash2, Server } from "lucide-react";
 import { useWorkspaceClient } from "@/stores/manager-context";
 import { useStore } from "@/hooks/use-store";
+import { isWeb } from "@/lib/runtime";
 import type { SyncServerConfig, SyncServerState } from "@/types/sync";
 import { StatusIndicator } from "./status-indicator";
 import { AddServerDialog } from "./add-server-dialog";
@@ -112,12 +113,31 @@ function EmptyState({ onAdd }: { onAdd: () => void }) {
   );
 }
 
+function NoSyncConfiguredWarning({ critical }: { critical: boolean }) {
+  const { t } = useTranslation("sync");
+  const className = critical
+    ? "bg-error/10 border-error/30 text-error"
+    : "bg-warning/10 border-warning/30 text-warning";
+
+  return (
+    <div className={`flex items-start gap-2 px-3 py-2 rounded-lg border ${className}`}>
+      <AlertTriangle size={16} className="mt-0.5 shrink-0" />
+      <p className="text-sm">
+        {critical ? t("webDataLossWithoutSyncWarning") : t("dataNotSafelySyncedWarning")}
+      </p>
+    </div>
+  );
+}
+
 export function SyncTabContent() {
   const { t } = useTranslation("sync");
   const client = useWorkspaceClient();
   const settings = useStore(client.settings);
   const servers = settings.servers;
   const connectionStatus = useStore(client.connectionStatus);
+  const hasSyncConfigured = settings.cloudSyncEnabled || servers.length > 0;
+  const hasNoSyncConfigured = !hasSyncConfigured;
+  const hasWebDataLossRisk = hasNoSyncConfigured && isWeb();
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [editingServer, setEditingServer] = useState<SyncServerConfig | null>(null);
 
@@ -128,6 +148,9 @@ export function SyncTabContent() {
   return (
     <>
       <CloudSyncSection />
+      {hasNoSyncConfigured ? (
+        <NoSyncConfiguredWarning critical={hasWebDataLossRisk} />
+      ) : null}
       {servers.length === 0 ? (
         <EmptyState onAdd={() => setShowAddDialog(true)} />
       ) : (

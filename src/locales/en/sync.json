@@ -10,6 +10,8 @@
   "disconnected": "Disconnected",
   "never": "Never",
   "lastSynced": "Last synced: {time}",
+  "dataNotSafelySyncedWarning": "This workspace is not safely synced. Configure cloud sync or a local sync server to protect your data across devices.",
+  "webDataLossWithoutSyncWarning": "All data can be lost without sync active in this browser session. Configure cloud sync or a local sync server before relying on this workspace.",
   "noSyncServers": "No sync servers configured for this workspace.",
   "addSyncServerDescription": "Add a sync server to keep your workspace data synchronized across devices.",
   "addSyncServer": "Add Sync Server",
