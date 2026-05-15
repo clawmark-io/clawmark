@@ -17,13 +17,9 @@ function WorkspacePickerRoute() {
 function usePickerTheme() {
   const manager = useManager();
   const lastUsedTheme = useStore(manager.lastUsedTheme);
-  const setTheme = useThemeStore((s) => s.setTheme);
-  const setCustomColors = useThemeStore((s) => s.setCustomColors);
+  const applyThemeSettings = useThemeStore((s) => s.applyThemeSettings);
 
   useEffect(() => {
-    setTheme(lastUsedTheme.theme);
-    if (lastUsedTheme.customColors) {
-      setCustomColors(lastUsedTheme.customColors);
-    }
-  }, [lastUsedTheme, setTheme, setCustomColors]);
+    applyThemeSettings(lastUsedTheme);
+  }, [lastUsedTheme, applyThemeSettings]);
 }

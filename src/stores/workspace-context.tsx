@@ -48,6 +48,8 @@ export function WorkspaceProvider({ workspaceId, manager, children }: WorkspaceP
     let cancelled = false;
     let activeClient: WorkspaceClient | null = null;
 
+    manager.setActiveWorkspaceId(workspaceId);
+
     let promise: Promise<WorkspaceClient>;
     if (inflightRef.current?.workspaceId === workspaceId) {
       promise = inflightRef.current.promise;
@@ -57,7 +59,10 @@ export function WorkspaceProvider({ workspaceId, manager, children }: WorkspaceP
     }
 
     promise.then((c) => {
-      if (cancelled) return;
+      if (cancelled) {
+        manager.releaseWorkspace(c);
+        return;
+      }
       inflightRef.current = null;
       activeClient = c;
       clientRef.current = c;
@@ -86,16 +91,18 @@ export function WorkspaceProvider({ workspaceId, manager, children }: WorkspaceP
     };
   }, [workspaceId, manager]);
 
+  const currentClient = client?.workspaceId === workspaceId ? client : null;
+
   // Subscribe to workspace doc changes via the client's doc store
   const workspace = useSyncExternalStore(
     useCallback(
       (onStoreChange: () => void) => {
-        if (!client) return () => {};
-        return client.doc.subscribe(onStoreChange);
+        if (!currentClient) return () => {};
+        return currentClient.doc.subscribe(onStoreChange);
       },
-      [client],
+      [currentClient],
     ),
-    useCallback(() => client?.doc.get() ?? undefined, [client]),
+    useCallback(() => currentClient?.doc.get() ?? undefined, [currentClient]),
   );
 
   // Cloud sync connection management
@@ -103,20 +110,20 @@ export function WorkspaceProvider({ workspaceId, manager, children }: WorkspaceP
   const authVersion = useSyncExternalStore(subscribeAuthChange, getAuthVersion, getAuthVersion);
 
   useEffect(() => {
-    if (!client) return;
-    const settings = client.settings.get();
+    if (!currentClient) return;
+    const settings = currentClient.settings.get();
     const shouldConnect = settings.cloudSyncEnabled && signedIn;
 
     if (shouldConnect) {
-      client.connectCloudSync();
+      currentClient.connectCloudSync();
     } else {
-      client.disconnectCloudSync();
+      currentClient.disconnectCloudSync();
     }
 
     return () => {
-      client.disconnectCloudSync();
+      currentClient.disconnectCloudSync();
     };
-  }, [client, signedIn, authVersion]);
+  }, [currentClient, signedIn, authVersion]);
 
   // Sync workspace metadata to workspace list (name, projectNames, defaultView)
   const projectCount = workspace ? Object.keys(workspace.projects).length : 0;
@@ -134,6 +141,7 @@ export function WorkspaceProvider({ workspaceId, manager, children }: WorkspaceP
   }, [workspace?.name, projectCount, defaultView, workspaceId, manager]);
 
   // Sync theme from workspace doc to theme store on load / change
+  const applyThemeSettings = useThemeStore((s) => s.applyThemeSettings);
   const setTheme = useThemeStore((s) => s.setTheme);
   const setCustomColors = useThemeStore((s) => s.setCustomColors);
   const workspaceTheme = workspace?.theme?.theme;
@@ -141,19 +149,18 @@ export function WorkspaceProvider({ workspaceId, manager, children }: WorkspaceP
 
   useEffect(() => {
     if (!workspaceTheme) return;
-    setTheme(workspaceTheme);
-    if (workspaceCustomColors) {
-      setCustomColors(workspaceCustomColors);
-    }
+    applyThemeSettings({ theme: workspaceTheme, customColors: workspaceCustomColors });
     manager.setLastUsedTheme({
       theme: workspaceTheme,
       customColors: workspaceCustomColors,
     });
-  }, [workspaceTheme, workspaceCustomColors, manager, setTheme, setCustomColors]);
+  }, [workspaceTheme, workspaceCustomColors, manager, applyThemeSettings]);
 
   const getHandle = useCallback(() => {
-    return clientRef.current?.getHandle() ?? null;
-  }, []);
+    return clientRef.current?.workspaceId === workspaceId
+      ? clientRef.current.getHandle()
+      : null;
+  }, [workspaceId]);
 
   // Theme actions include side-effects (syncing to theme-store)
   const updateThemeFn = useCallback((theme: ThemeName) => {
@@ -181,7 +188,7 @@ export function WorkspaceProvider({ workspaceId, manager, children }: WorkspaceP
   }), [workspace, workspaceId, getHandle, updateThemeFn, updateCustomColorsFn]);
 
   return (
-    <WorkspaceClientProvider client={client}>
+    <WorkspaceClientProvider client={currentClient}>
       <WorkspaceContext value={contextValue}>
         {children}
       </WorkspaceContext>
