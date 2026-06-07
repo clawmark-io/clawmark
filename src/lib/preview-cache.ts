@@ -37,6 +37,10 @@ function fingerprintKey(workspaceId: string, projectId: string): string {
   return `project-preview-${workspaceId}-${projectId}`;
 }
 
+function memoryCacheKey(workspaceId: string, projectId: string): string {
+  return `${workspaceId}:${projectId}`;
+}
+
 export function getStoredFingerprint(workspaceId: string, projectId: string): string | null {
   return localStorage.getItem(fingerprintKey(workspaceId, projectId));
 }
@@ -49,19 +53,30 @@ export function removeStoredFingerprint(workspaceId: string, projectId: string):
   localStorage.removeItem(fingerprintKey(workspaceId, projectId));
 }
 
-export function getMemoryCache(projectId: string): MemoryCacheEntry | undefined {
-  return memoryCache.get(projectId);
+export function getMemoryCache(workspaceId: string, projectId: string): MemoryCacheEntry | undefined {
+  return memoryCache.get(memoryCacheKey(workspaceId, projectId));
 }
 
-export function setMemoryCache(projectId: string, entry: MemoryCacheEntry): void {
-  memoryCache.set(projectId, entry);
+export function setMemoryCache(workspaceId: string, projectId: string, entry: MemoryCacheEntry): void {
+  memoryCache.set(memoryCacheKey(workspaceId, projectId), entry);
 }
 
-export function clearMemoryCache(projectId: string): void {
-  const entry = memoryCache.get(projectId);
+export function clearMemoryCache(workspaceId: string, projectId: string): void {
+  const key = memoryCacheKey(workspaceId, projectId);
+  const entry = memoryCache.get(key);
   if (entry) {
     URL.revokeObjectURL(entry.blobUrl);
-    memoryCache.delete(projectId);
+    memoryCache.delete(key);
+  }
+}
+
+export function clearWorkspaceMemoryCache(workspaceId: string): void {
+  const prefix = `${workspaceId}:`;
+  for (const [key, entry] of memoryCache) {
+    if (key.startsWith(prefix)) {
+      URL.revokeObjectURL(entry.blobUrl);
+      memoryCache.delete(key);
+    }
   }
 }
 
@@ -77,7 +92,7 @@ export async function loadPreview(workspaceId: string, projectId: string): Promi
 
 export async function removePreview(workspaceId: string, projectId: string): Promise<void> {
   await filesystem.remove(workspaceId, `previews/${projectId}`);
-  clearMemoryCache(projectId);
+  clearMemoryCache(workspaceId, projectId);
   removeStoredFingerprint(workspaceId, projectId);
 }
 

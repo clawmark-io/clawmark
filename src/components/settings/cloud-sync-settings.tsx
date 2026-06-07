@@ -17,6 +17,7 @@ import {
 import { CLOUD_SYNC_SERVER_ID } from "@/lib/cloud-sync/cloud-sync-connection";
 import { requestDeviceCode, pollDeviceToken } from "@/lib/cloud-sync/device-auth-api";
 import { stopTokenRefreshMonitor } from "@/lib/cloud-sync/token-refresh-monitor";
+import type { WorkspaceClient } from "@/lib/workspace/workspace-client";
 
 // --- Auth subscription hook ---
 
@@ -200,15 +201,20 @@ function DeviceAuthExpiredState({ onRetry }: { onRetry: () => void }) {
 
 function CloudSyncStatusIndicator() {
   const client = useOptionalWorkspaceClient();
-  if (!client) return <StatusIndicator status="disconnected" />;
+  if (!client) return null;
   return <CloudSyncStatusFromClient />;
 }
 
 function CloudSyncStatusFromClient() {
   const client = useOptionalWorkspaceClient()!;
+  const settings = useStore(client.settings);
   const connectionStatus = useStore(client.connectionStatus);
   const cloudSyncState = connectionStatus[CLOUD_SYNC_SERVER_ID];
   const status = cloudSyncState?.status ?? "disconnected";
+
+  if (!settings.cloudSyncEnabled) {
+    return <CloudSyncBadge state="local" />;
+  }
 
   return (
     <>
@@ -217,6 +223,34 @@ function CloudSyncStatusFromClient() {
         <span className="text-xs text-error truncate">{cloudSyncState.error}</span>
       ) : null}
     </>
+  );
+}
+
+function CurrentWorkspaceCloudSyncButton() {
+  const client = useOptionalWorkspaceClient();
+  if (!client) return null;
+
+  return <CurrentWorkspaceCloudSyncButtonFromClient client={client} />;
+}
+
+function CurrentWorkspaceCloudSyncButtonFromClient({ client }: { client: WorkspaceClient }) {
+  const { t } = useTranslation("settings");
+  const settings = useStore(client.settings);
+
+  if (!settings) return null;
+
+  if (settings.cloudSyncEnabled) {
+    return (
+      <button className="btn btn-outline btn-sm" onClick={() => client.setCloudSyncEnabled(false)}>
+        {t("stopSyncing")}
+      </button>
+    );
+  }
+
+  return (
+    <button className="btn btn-primary btn-sm" onClick={() => client.setCloudSyncEnabled(true)}>
+      {t("syncToCloud")}
+    </button>
   );
 }
 
@@ -238,9 +272,12 @@ function SignedInState() {
             <CloudSyncStatusIndicator />
           </div>
         </div>
-        <button className="btn btn-outline btn-sm" onClick={handleSignOut}>
-          {t("signOutButton")}
-        </button>
+        <div className="flex items-center gap-2">
+          <CurrentWorkspaceCloudSyncButton />
+          <button className="btn btn-outline btn-sm" onClick={handleSignOut}>
+            {t("signOutButton")}
+          </button>
+        </div>
       </div>
 
       {refreshError ? <RefreshErrorBanner message={refreshError} /> : null}

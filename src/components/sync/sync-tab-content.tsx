@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { AlertTriangle, RefreshCw, Pencil, Trash2, Server } from "lucide-react";
-import { useWorkspaceClient } from "@/stores/manager-context";
+import { useOptionalWorkspaceClient } from "@/stores/manager-context";
 import { useStore } from "@/hooks/use-store";
 import { isWeb } from "@/lib/runtime";
 import type { SyncServerConfig, SyncServerState } from "@/types/sync";
@@ -130,8 +130,17 @@ function NoSyncConfiguredWarning({ critical }: { critical: boolean }) {
 }
 
 export function SyncTabContent() {
+  const client = useOptionalWorkspaceClient();
+
+  if (!client) {
+    return null;
+  }
+
+  return <LoadedSyncTabContent client={client} />;
+}
+
+function LoadedSyncTabContent({ client }: { client: WorkspaceClient }) {
   const { t } = useTranslation("sync");
-  const client = useWorkspaceClient();
   const settings = useStore(client.settings);
   const servers = settings.servers;
   const connectionStatus = useStore(client.connectionStatus);

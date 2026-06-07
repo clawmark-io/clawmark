@@ -12,6 +12,7 @@ import {
   isCloudSyncSignedIn,
   getAuthVersion,
 } from "@/lib/cloud-sync/cloud-sync-auth";
+import { logCloudSync } from "@/lib/cloud-sync/cloud-sync-log";
 import { updateTheme } from "@/lib/workspace/actions/theme/update-theme";
 import { updateCustomColors } from "@/lib/workspace/actions/theme/update-custom-colors";
 
@@ -60,7 +61,13 @@ export function WorkspaceProvider({ workspaceId, manager, children }: WorkspaceP
 
     promise.then((c) => {
       if (cancelled) {
-        manager.releaseWorkspace(c);
+        setTimeout(() => {
+          if (clientRef.current === c) return;
+          if (inflightRef.current?.promise === promise) {
+            inflightRef.current = null;
+          }
+          manager.releaseWorkspace(c);
+        }, 0);
         return;
       }
       inflightRef.current = null;
@@ -93,6 +100,17 @@ export function WorkspaceProvider({ workspaceId, manager, children }: WorkspaceP
 
   const currentClient = client?.workspaceId === workspaceId ? client : null;
 
+  const cloudSyncEnabled = useSyncExternalStore(
+    useCallback(
+      (onStoreChange: () => void) => {
+        if (!currentClient) return () => {};
+        return currentClient.settings.subscribe(onStoreChange);
+      },
+      [currentClient],
+    ),
+    useCallback(() => currentClient?.settings.get().cloudSyncEnabled ?? false, [currentClient]),
+  );
+
   // Subscribe to workspace doc changes via the client's doc store
   const workspace = useSyncExternalStore(
     useCallback(
@@ -111,8 +129,14 @@ export function WorkspaceProvider({ workspaceId, manager, children }: WorkspaceP
 
   useEffect(() => {
     if (!currentClient) return;
-    const settings = currentClient.settings.get();
-    const shouldConnect = settings.cloudSyncEnabled && signedIn;
+    const shouldConnect = cloudSyncEnabled && signedIn;
+    logCloudSync("workspace provider sync decision", {
+      workspaceId,
+      cloudSyncEnabled,
+      signedIn,
+      authVersion,
+      shouldConnect,
+    });
 
     if (shouldConnect) {
       currentClient.connectCloudSync();
@@ -123,7 +147,7 @@ export function WorkspaceProvider({ workspaceId, manager, children }: WorkspaceP
     return () => {
       currentClient.disconnectCloudSync();
     };
-  }, [currentClient, signedIn, authVersion]);
+  }, [currentClient, cloudSyncEnabled, signedIn, authVersion]);
 
   // Sync workspace metadata to workspace list (name, projectNames, defaultView)
   const projectCount = workspace ? Object.keys(workspace.projects).length : 0;

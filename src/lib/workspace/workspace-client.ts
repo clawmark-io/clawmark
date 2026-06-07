@@ -7,6 +7,9 @@ import type { ReadableStore, WritableStore } from "@/lib/store.ts";
 import { ImageStore } from "@/lib/image-store.ts";
 import { BackgroundProcesses } from "@/lib/workspace/background-processes.ts";
 import { SyncManager } from "@/lib/sync/sync-manager.ts";
+import { CLOUD_SYNC_SERVER_ID, buildCloudSyncConfig } from "@/lib/cloud-sync/cloud-sync-connection.ts";
+import { getCloudSyncAuth } from "@/lib/cloud-sync/cloud-sync-auth.ts";
+import { logCloudSync } from "@/lib/cloud-sync/cloud-sync-log.ts";
 
 export type WorkspaceClientOptions = {
   workspaceId: string;
@@ -64,11 +67,14 @@ export class WorkspaceClient {
     this.images = new ImageStore(
       options.workspaceId,
       options.fs,
-      () => this.settingsStore.get().servers,
+      () => this.getImageSyncServerConfigs(),
     );
 
     // Create SyncManager if services are requested
     if (options.loadServices) {
+      logCloudSync("workspace client services enabled", {
+        workspaceId: this.workspaceId,
+      });
       this.syncManager = new SyncManager(
         (serverId, status, error) => this.onStatusChange(serverId, status, error),
         (serverId, timestamp) => this.onLastSynced(serverId, timestamp),
@@ -100,11 +106,23 @@ export class WorkspaceClient {
   }
 
   connectCloudSync(): void {
-    this.syncManager?.connectCloudSync();
+    if (!this.syncManager) {
+      logCloudSync("connect skipped: workspace client has no sync manager", {
+        workspaceId: this.workspaceId,
+      });
+      return;
+    }
+    this.syncManager.connectCloudSync();
   }
 
   disconnectCloudSync(): void {
-    this.syncManager?.disconnectCloudSync();
+    if (!this.syncManager) {
+      logCloudSync("disconnect skipped: workspace client has no sync manager", {
+        workspaceId: this.workspaceId,
+      });
+      return;
+    }
+    this.syncManager.disconnectCloudSync();
   }
 
   connectAutomaticServers(): void {
@@ -119,7 +137,7 @@ export class WorkspaceClient {
 
   async flushConnectedServers(): Promise<void> {
     if (!this.syncManager) return;
-    const servers = this.settingsStore.get().servers;
+    const servers = this.getImageSyncServerConfigs();
     await this.syncManager.flushConnectedServers(servers);
   }
 
@@ -151,6 +169,10 @@ export class WorkspaceClient {
   }
 
   setCloudSyncEnabled(enabled: boolean): void {
+    logCloudSync("workspace setting changed", {
+      workspaceId: this.workspaceId,
+      cloudSyncEnabled: enabled,
+    });
     this.settingsStore.update((s) => ({
       ...s,
       cloudSyncEnabled: enabled,
@@ -190,7 +212,29 @@ export class WorkspaceClient {
     this.persistence.saveLocalSettings(this.workspaceId, this.settingsStore.get());
   }
 
+  private getImageSyncServerConfigs(): SyncServerConfig[] {
+    const settings = this.settingsStore.get();
+    const configs = [...settings.servers];
+
+    if (settings.cloudSyncEnabled) {
+      const auth = getCloudSyncAuth();
+      const cloudConfig = auth ? buildCloudSyncConfig(auth) : null;
+      if (cloudConfig && !configs.some((config) => config.id === cloudConfig.id)) {
+        configs.push(cloudConfig);
+      }
+    }
+
+    return configs;
+  }
+
   private onStatusChange(serverId: string, status: SyncConnectionStatus, error?: string): void {
+    if (serverId === CLOUD_SYNC_SERVER_ID) {
+      logCloudSync("status changed", {
+        workspaceId: this.workspaceId,
+        status,
+        error: error ?? null,
+      });
+    }
     this.connectionStatusStore.update((states) => ({
       ...states,
       [serverId]: {

@@ -37,14 +37,14 @@ export function useProjectPreview(
   );
 
   const [previewUrl, setPreviewUrl] = useState<string | null>(() => {
-    const entry = getMemoryCache(project.id);
+    const entry = getMemoryCache(workspaceId, project.id);
     const fp = computeFingerprint(project, themeKey);
     if (entry?.fingerprint === fp) return entry.blobUrl;
     if (entry) return entry.blobUrl;
     return null;
   });
   const [loading, setLoading] = useState(() => {
-    const entry = getMemoryCache(project.id);
+    const entry = getMemoryCache(workspaceId, project.id);
     const fp = computeFingerprint(project, themeKey);
     return !entry || entry.fingerprint !== fp;
   });
@@ -56,7 +56,7 @@ export function useProjectPreview(
     if (!bgVersion) return;
     const handler = (e: Event) => {
       if ((e as CustomEvent).detail?.uuid === bgVersion) {
-        clearMemoryCache(project.id);
+        clearMemoryCache(workspaceId, project.id);
         removeStoredFingerprint(workspaceId, project.id);
         bumpImageSyncGen();
       }
@@ -73,7 +73,7 @@ export function useProjectPreview(
 
     (async () => {
       // Step 1: Check in-memory cache
-      const memEntry = getMemoryCache(projectId);
+      const memEntry = getMemoryCache(workspaceId, projectId);
       if (memEntry?.fingerprint === fingerprint) {
         setPreviewUrl(memEntry.blobUrl);
         setLoading(false);
@@ -89,7 +89,7 @@ export function useProjectPreview(
           return;
         }
         if (opfsUrl) {
-          setMemoryCache(projectId, { blobUrl: opfsUrl, fingerprint });
+          setMemoryCache(workspaceId, projectId, { blobUrl: opfsUrl, fingerprint });
           setPreviewUrl(opfsUrl);
           setLoading(false);
           return;
@@ -147,9 +147,9 @@ export function useProjectPreview(
 
         // Step 9: Create blob URL and update memory cache
         const newUrl = URL.createObjectURL(blob);
-        const oldEntry = getMemoryCache(projectId);
+        const oldEntry = getMemoryCache(workspaceId, projectId);
         const oldBlobUrl = oldEntry?.blobUrl;
-        setMemoryCache(projectId, { blobUrl: newUrl, fingerprint });
+        setMemoryCache(workspaceId, projectId, { blobUrl: newUrl, fingerprint });
         setPreviewUrl(newUrl);
         setLoading(false);
 

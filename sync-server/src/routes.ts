@@ -135,6 +135,7 @@ export function handleWorkspaceUpgrade(
       logger.info(`WS upgrade: workspace=${workspaceId}`);
 
       workspaceWss.handleUpgrade(request, socket, head, (ws) => {
+        repoManager.retain(workspaceId);
         workspaceWss.emit("connection", ws, request);
         logger.info(`WS connected: workspace=${workspaceId}`);
 
@@ -153,6 +154,8 @@ export function handleWorkspaceUpgrade(
             logger.warn(
               `Failed to update index for workspace ${workspaceId}: ${err}`,
             );
+          }).finally(() => {
+            repoManager.release(workspaceId);
           });
         });
       });

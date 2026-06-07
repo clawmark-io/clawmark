@@ -20,15 +20,34 @@ export function createWorkspaceRepo(databaseName: string, messagePort?: MessageP
 // the just-closed one and cause "Document unavailable" errors).
 
 let pendingRepo: { databaseName: string; repo: Repo } | null = null;
+let pendingRepoTimer: ReturnType<typeof setTimeout> | null = null;
+const PENDING_REPO_TTL_MS = 30_000;
 
 export function parkRepo(databaseName: string, repo: Repo) {
+  if (pendingRepo?.repo && pendingRepo.repo !== repo) {
+    void pendingRepo.repo.shutdown();
+  }
+  if (pendingRepoTimer) {
+    clearTimeout(pendingRepoTimer);
+  }
   pendingRepo = { databaseName, repo };
+  pendingRepoTimer = setTimeout(() => {
+    if (pendingRepo?.repo === repo) {
+      pendingRepo = null;
+      void repo.shutdown();
+    }
+    pendingRepoTimer = null;
+  }, PENDING_REPO_TTL_MS);
 }
 
 export function claimRepo(databaseName: string): Repo | null {
   if (pendingRepo && pendingRepo.databaseName === databaseName) {
     const repo = pendingRepo.repo;
     pendingRepo = null;
+    if (pendingRepoTimer) {
+      clearTimeout(pendingRepoTimer);
+      pendingRepoTimer = null;
+    }
     return repo;
   }
   return null;

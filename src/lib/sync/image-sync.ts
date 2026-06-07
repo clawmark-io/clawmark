@@ -1,6 +1,6 @@
 import type { SyncServerConfig } from "@/types/sync";
 import type { Project } from "@/types/data-model";
-import { loadImageAsBlob, removeImage, imageExists } from "@/lib/utils/opfs.ts";
+import { loadImageAsBlob, removeImage, imageExists, saveImage } from "@/lib/utils/opfs.ts";
 import { enqueueImagePuts, getEntriesForServer, removeEntry } from "./image-queue";
 import type { ImageQueueEntry } from "./image-queue";
 
@@ -92,7 +92,7 @@ export async function flushImageQueue(wsId: string, config: SyncServerConfig): P
   }
 }
 
-/** Reconciliation: ensure server has all referenced images (§6) */
+/** Reconciliation: ensure referenced images exist on both local storage and server. */
 export async function reconcileImages(
   wsId: string,
   config: SyncServerConfig,
@@ -101,17 +101,32 @@ export async function reconcileImages(
   const serverUuids = await fetchServerInventory(config, wsId);
   const presentSet = new Set(serverUuids);
 
-  const missingUuids = [...referencedUuids].filter((uuid) => !presentSet.has(uuid));
-  const existsResults = await Promise.all(
-    missingUuids.map(async (uuid) => ({ uuid, exists: await imageExists(wsId, uuid) })),
+  const imageStates = await Promise.all(
+    [...referencedUuids].map(async (uuid) => ({
+      uuid,
+      existsLocally: await imageExists(wsId, uuid),
+      existsOnServer: presentSet.has(uuid),
+    })),
   );
-  const entries: ImageQueueEntry[] = existsResults
-    .filter((r) => r.exists)
+  const entries: ImageQueueEntry[] = imageStates
+    .filter((r) => r.existsLocally && !r.existsOnServer)
     .map((r) => ({ type: "put" as const, workspaceId: wsId, serverId: config.id, uuid: r.uuid }));
   if (entries.length > 0) {
     await enqueueImagePuts(entries);
     await flushImageQueue(wsId, config);
   }
+
+  const missingLocalUuids = imageStates
+    .filter((r) => !r.existsLocally && r.existsOnServer)
+    .map((r) => r.uuid);
+  await Promise.all(
+    missingLocalUuids.map(async (uuid) => {
+      const blob = await downloadImageFromServer(config, wsId, uuid);
+      if (!blob) return;
+      await saveImage(wsId, uuid, blob);
+      window.dispatchEvent(new CustomEvent("image-synced", { detail: { uuid } }));
+    }),
+  );
 }
 
 /** Collect all referenced image UUIDs from projects */

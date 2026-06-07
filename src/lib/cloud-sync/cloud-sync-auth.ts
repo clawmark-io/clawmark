@@ -1,3 +1,5 @@
+import { logCloudSync } from "./cloud-sync-log";
+
 const STORAGE_KEY = "cloudsyncAuth";
 
 export type CloudSyncAuth = {
@@ -43,11 +45,18 @@ export function getCloudSyncAuth(): CloudSyncAuth | null {
 }
 
 export function setCloudSyncAuth(auth: CloudSyncAuth): void {
+  logCloudSync("auth stored", {
+    hasAccessToken: Boolean(auth.accessToken),
+    hasRefreshToken: Boolean(auth.refreshToken),
+    hasCloudSyncUrl: Boolean(auth.cloudSyncUrl),
+    expiresAt: auth.expiresAt ?? null,
+  });
   localStorage.setItem(STORAGE_KEY, JSON.stringify(auth));
   notifyAuthChange();
 }
 
 export function clearCloudSyncAuth(): void {
+  logCloudSync("auth cleared");
   localStorage.removeItem(STORAGE_KEY);
   notifyAuthChange();
 }
@@ -55,6 +64,7 @@ export function clearCloudSyncAuth(): void {
 export function updateCloudSyncAccessToken(accessToken: string, expiresAt: number): void {
   const current = getCloudSyncAuth();
   if (!current) return;
+  logCloudSync("access token refreshed", { expiresAt });
   setCloudSyncAuth({ ...current, accessToken, expiresAt });
 }
 

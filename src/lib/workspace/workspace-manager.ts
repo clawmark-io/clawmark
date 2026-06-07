@@ -6,6 +6,8 @@ import { createStore, readOnly } from "@/lib/store.ts";
 import type { ReadableStore } from "@/lib/store.ts";
 import { WorkspaceClient } from "@/lib/workspace/workspace-client.ts";
 import { createWorkspaceRepo, createWorkspaceDoc, claimRepo } from "@/lib/automerge/repo.ts";
+import { logCloudSync } from "@/lib/cloud-sync/cloud-sync-log.ts";
+import { clearWorkspaceMemoryCache } from "@/lib/preview-cache.ts";
 
 export type WorkspacesManagerConfig = {
   fs: FilesystemDriver;
@@ -74,8 +76,14 @@ export class WorkspacesManager {
     const clientEntry = this.clients.get(workspaceId);
     if (clientEntry) {
       clientEntry.client.close();
+      try {
+        clientEntry.client.getRepo().shutdown();
+      } catch {
+        // Repo may already be shut down
+      }
       this.clients.delete(workspaceId);
     }
+    clearWorkspaceMemoryCache(workspaceId);
 
     const entry = this.workspacesStore.get().find((e) => e.workspaceId === workspaceId);
 
@@ -210,6 +218,11 @@ export class WorkspacesManager {
       // Upgrade: replace light client with full client
       const old = this.clients.get(workspaceId)!;
       old.client.close();
+      try {
+        old.client.getRepo().shutdown();
+      } catch {
+        // Repo may already be shut down
+      }
       this.clients.set(workspaceId, { client, refCount: 1, loadServices: true });
     } else {
       // Secondary (light) client alongside existing full client — track separately
@@ -231,6 +244,7 @@ export class WorkspacesManager {
         } catch {
           // Repo may already be shut down
         }
+        clearWorkspaceMemoryCache(client.workspaceId);
         this.clients.delete(client.workspaceId);
       }
     } else {
@@ -241,6 +255,7 @@ export class WorkspacesManager {
       } catch {
         // Repo may already be shut down
       }
+      clearWorkspaceMemoryCache(client.workspaceId);
     }
   }
 
@@ -259,6 +274,11 @@ export class WorkspacesManager {
 
   setWorkspaceCloudSyncEnabled(workspaceId: string, enabled: boolean): void {
     const entry = this.clients.get(workspaceId);
+    logCloudSync("manager cloud sync setting changed", {
+      workspaceId,
+      cloudSyncEnabled: enabled,
+      hasActiveClient: Boolean(entry),
+    });
     if (entry) {
       // Active client — update in-memory store + persist
       entry.client.setCloudSyncEnabled(enabled);
@@ -285,6 +305,7 @@ export class WorkspacesManager {
       } catch {
         // Repo may already be shut down
       }
+      clearWorkspaceMemoryCache(entry.client.workspaceId);
     }
     this.clients.clear();
   }

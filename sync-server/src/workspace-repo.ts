@@ -14,7 +14,12 @@ type WorkspaceEntry = {
   wss: WebSocketServer;
   adapter: NodeWSServerAdapter;
   presentImages: Set<string>;
+  activeConnections: number;
+  releaseTimer: ReturnType<typeof setTimeout> | null;
+  handleCleanups: Map<string, () => void>;
 };
+
+const WORKSPACE_IDLE_RELEASE_MS = 30_000;
 
 function collectReferencedImageUuids(doc: Record<string, unknown>): Set<string> {
   const uuids = new Set<string>();
@@ -29,7 +34,6 @@ function collectReferencedImageUuids(doc: Record<string, unknown>): Set<string> 
 
 export class WorkspaceRepoManager {
   private readonly workspaces = new Map<string, WorkspaceEntry>();
-  private readonly trackedHandles = new Set<string>();
   private readonly previousImageUuids = new Map<string, Set<string>>();
   private readonly storagePath: string;
   private readonly indexStore: WorkspaceIndexStore;
@@ -47,7 +51,10 @@ export class WorkspaceRepoManager {
 
   async getOrCreate(workspaceId: string): Promise<WorkspaceEntry> {
     const existing = this.workspaces.get(workspaceId);
-    if (existing) return existing;
+    if (existing) {
+      this.cancelRelease(existing);
+      return existing;
+    }
 
     const workspacePath = join(this.storagePath, "workspaces", workspaceId, "workspace");
     mkdirSync(workspacePath, { recursive: true });
@@ -75,7 +82,15 @@ export class WorkspaceRepoManager {
       sharePolicy: async () => true,
     });
 
-    const entry: WorkspaceEntry = { repo, wss, adapter, presentImages };
+    const entry: WorkspaceEntry = {
+      repo,
+      wss,
+      adapter,
+      presentImages,
+      activeConnections: 0,
+      releaseTimer: null,
+      handleCleanups: new Map(),
+    };
     this.workspaces.set(workspaceId, entry);
 
     // Pre-load workspace document from storage so it can be shared with connecting peers.
@@ -93,6 +108,72 @@ export class WorkspaceRepoManager {
 
     this.logger.info(`Created repo for workspace: ${workspaceId} (${presentImages.size} images on disk)`);
     return entry;
+  }
+
+  retain(workspaceId: string): void {
+    const entry = this.workspaces.get(workspaceId);
+    if (!entry) return;
+    this.cancelRelease(entry);
+    entry.activeConnections++;
+  }
+
+  release(workspaceId: string): void {
+    const entry = this.workspaces.get(workspaceId);
+    if (!entry) return;
+
+    entry.activeConnections = Math.max(0, entry.activeConnections - 1);
+    if (entry.activeConnections > 0 || entry.releaseTimer) return;
+
+    entry.releaseTimer = setTimeout(() => {
+      this.unloadWorkspace(workspaceId).catch((err) => {
+        this.logger.warn(`Failed to unload workspace ${workspaceId}: ${err}`);
+      });
+    }, WORKSPACE_IDLE_RELEASE_MS);
+  }
+
+  private cancelRelease(entry: WorkspaceEntry): void {
+    if (entry.releaseTimer) {
+      clearTimeout(entry.releaseTimer);
+      entry.releaseTimer = null;
+    }
+  }
+
+  private async unloadWorkspace(workspaceId: string): Promise<void> {
+    const entry = this.workspaces.get(workspaceId);
+    if (!entry || entry.activeConnections > 0) return;
+
+    this.cancelRelease(entry);
+
+    try {
+      await this.updateIndex(workspaceId);
+    } catch (err) {
+      this.logger.warn(`Failed to update index before unloading workspace ${workspaceId}: ${err}`);
+    }
+    if (entry.activeConnections > 0) return;
+
+    for (const cleanup of entry.handleCleanups.values()) {
+      cleanup();
+    }
+    entry.handleCleanups.clear();
+    this.previousImageUuids.delete(workspaceId);
+
+    try {
+      await entry.repo.shutdown();
+    } catch (err) {
+      this.logger.warn(`Failed to shut down repo for workspace ${workspaceId}: ${err}`);
+    }
+
+    try {
+      entry.wss.clients.forEach((client) => client.terminate());
+      await new Promise<void>((resolve) => {
+        entry.wss.close(() => resolve());
+      });
+    } catch (err) {
+      this.logger.warn(`Failed to close WebSocket server for workspace ${workspaceId}: ${err}`);
+    }
+
+    this.workspaces.delete(workspaceId);
+    this.logger.info(`Unloaded repo for workspace: ${workspaceId}`);
   }
 
   /**
@@ -125,13 +206,12 @@ export class WorkspaceRepoManager {
         });
         this.logger.info(`Updated workspace index: ${workspaceId} -> "${doc.name}" (${documentUrl})`);
 
-        if (!this.trackedHandles.has(url)) {
-          this.trackedHandles.add(url);
+        if (!entry.handleCleanups.has(url)) {
 
           // Initialize image tracking for reactive GC
           this.previousImageUuids.set(workspaceId, collectReferencedImageUuids(doc));
 
-          docHandle.on("change", async ({ doc: updatedDoc }) => {
+          const handleChange = async ({ doc: updatedDoc }: { doc: unknown }) => {
             const docRecord = updatedDoc as Record<string, unknown> | undefined;
 
             // Update workspace name index
@@ -168,6 +248,11 @@ export class WorkspaceRepoManager {
                 }
               }
             }
+          };
+
+          docHandle.on("change", handleChange);
+          entry.handleCleanups.set(url, () => {
+            docHandle.off("change", handleChange);
           });
         }
       }

@@ -5,6 +5,7 @@ import type { Workspace } from "@/types/data-model";
 import { flushImageQueue, reconcileImages, collectReferencedUuids } from "./image-sync";
 import { getCloudSyncAuth } from "@/lib/cloud-sync/cloud-sync-auth";
 import { CLOUD_SYNC_SERVER_ID, buildCloudSyncConfig } from "@/lib/cloud-sync/cloud-sync-connection";
+import { logCloudSync, warnCloudSync } from "@/lib/cloud-sync/cloud-sync-log";
 
 const MANUAL_SYNC_QUIET_PERIOD_MS = 5000;
 const IMAGE_SYNC_DELAY_MS = 3000;
@@ -202,52 +203,83 @@ export class SyncManager {
   }
 
   connectCloudSync() {
+    logCloudSync("connect requested", {
+      repoReady: Boolean(this.repo),
+      workspaceId: this.workspaceId,
+      alreadyConnected: this.adapters.has(CLOUD_SYNC_SERVER_ID),
+    });
+
     if (!this.repo || !this.workspaceId) {
-      console.warn("[cloud-sync] connect deferred: repo not ready");
+      warnCloudSync("connect deferred: repo not ready");
       this.pendingCloudSync = true;
       return;
     }
 
-    if (this.adapters.has(CLOUD_SYNC_SERVER_ID)) return;
+    if (this.adapters.has(CLOUD_SYNC_SERVER_ID)) {
+      logCloudSync("connect skipped: adapter already exists");
+      return;
+    }
 
     const auth = getCloudSyncAuth();
     if (!auth) {
-      console.warn("[cloud-sync] connect skipped: not authenticated");
+      warnCloudSync("connect skipped: not authenticated");
       return;
     }
 
     const config = buildCloudSyncConfig(auth);
     if (!config) {
-      console.warn(
-        "[cloud-sync] connect skipped: missing cloudSyncUrl in auth data",
-      );
+      warnCloudSync("connect skipped: config could not be built");
       return;
     }
 
     // Don't create adapter with expired token — wait for token refresh
+    logCloudSync("config built", {
+      host: config.host,
+      port: config.port,
+      useTls: config.useTls,
+      hasAccessToken: Boolean(config.accessToken),
+      hasCloudSyncUrl: Boolean(auth.cloudSyncUrl),
+      cloudSyncOrigin: this.originForLog(auth.cloudSyncUrl),
+      expiresAt: auth.expiresAt ?? null,
+      expiresInMs: auth.expiresAt ? auth.expiresAt - Date.now() : null,
+    });
+
     if (auth.expiresAt && auth.expiresAt < Date.now()) {
-      console.warn("[cloud-sync] connect deferred: token expired, waiting for refresh");
+      warnCloudSync("connect deferred: token expired, waiting for refresh", {
+        expiresAt: auth.expiresAt,
+        expiredByMs: Date.now() - auth.expiresAt,
+      });
       this.onStatusChange(CLOUD_SYNC_SERVER_ID, "connecting");
       return;
     }
 
     const url = this.buildUrl(config);
+    logCloudSync("creating adapter", {
+      endpoint: this.redactUrlForLog(url),
+    });
     this.onStatusChange(CLOUD_SYNC_SERVER_ID, "connecting");
 
     try {
       const adapter = new BrowserWebSocketClientAdapter(url);
+      this.instrumentCloudAdapter(adapter);
       this.repo.networkSubsystem.addNetworkAdapter(adapter);
       this.adapters.set(CLOUD_SYNC_SERVER_ID, adapter);
+      logCloudSync("adapter registered");
 
       const cleanup = this.observeCloudSyncAdapter(adapter, config);
       this.adapterCleanups.set(CLOUD_SYNC_SERVER_ID, cleanup);
     } catch (err) {
       const message = err instanceof Error ? err.message : "Connection failed";
+      warnCloudSync("adapter creation failed", { message });
       this.onStatusChange(CLOUD_SYNC_SERVER_ID, "error", message);
     }
   }
 
   disconnectCloudSync() {
+    logCloudSync("disconnect requested", {
+      hadAdapter: this.adapters.has(CLOUD_SYNC_SERVER_ID),
+      hadReconnectTimer: Boolean(this.cloudReconnectTimer),
+    });
     this.pendingCloudSync = false;
     if (this.cloudReconnectTimer) {
       clearTimeout(this.cloudReconnectTimer);
@@ -262,6 +294,9 @@ export class SyncManager {
   ): () => void {
     const handlePeerCandidate = () => {
       if (this.adapters.get(CLOUD_SYNC_SERVER_ID) === adapter) {
+        logCloudSync("peer candidate received", {
+          remotePeerId: adapter.remotePeerId ?? null,
+        });
         this.onStatusChange(CLOUD_SYNC_SERVER_ID, "connected");
         this.scheduleImageSync(config);
       }
@@ -269,6 +304,9 @@ export class SyncManager {
 
     const handlePeerDisconnected = () => {
       if (this.adapters.get(CLOUD_SYNC_SERVER_ID) === adapter) {
+        warnCloudSync("peer disconnected; scheduling reconnect", {
+          delayMs: CLOUD_RECONNECT_DELAY_MS,
+        });
         // Tear down adapter with stale token URL
         this.disconnect(CLOUD_SYNC_SERVER_ID);
         // Reconnect with fresh token after delay
@@ -343,5 +381,51 @@ export class SyncManager {
     const protocol = config.useTls ? "wss" : "ws";
     return `${protocol}://${config.host}:${config.port}/v1/sync/${this.workspaceId}/data?token=${encodeURIComponent(config.accessToken)}`;
   }
-}
 
+  private redactUrlForLog(url: string): string {
+    try {
+      const parsed = new URL(url);
+      if (parsed.searchParams.has("token")) {
+        parsed.searchParams.set("token", "<redacted>");
+      }
+      return parsed.toString();
+    } catch {
+      return "<unparseable-url>";
+    }
+  }
+
+  private originForLog(url: string | undefined): string | null {
+    if (!url) return null;
+    try {
+      return new URL(url).origin;
+    } catch {
+      return "<invalid-url>";
+    }
+  }
+
+  private instrumentCloudAdapter(adapter: BrowserWebSocketClientAdapter): void {
+    const originalOpen = adapter.onOpen;
+    adapter.onOpen = () => {
+      logCloudSync("websocket open");
+      originalOpen();
+    };
+
+    const originalClose = adapter.onClose;
+    adapter.onClose = () => {
+      warnCloudSync("websocket close", {
+        remotePeerId: adapter.remotePeerId ?? null,
+        willAdapterRetry: adapter.retryInterval > 0,
+      });
+      originalClose();
+    };
+
+    const originalError = adapter.onError;
+    adapter.onError = (event) => {
+      warnCloudSync("websocket error", {
+        eventType: "type" in event ? event.type : "unknown",
+        hasError: "error" in event,
+      });
+      originalError(event);
+    };
+  }
+}

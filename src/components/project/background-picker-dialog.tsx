@@ -1,6 +1,7 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useReducer, useRef } from "react";
 import { ImageOff, Upload } from "lucide-react";
 import { useWorkspace } from "@/stores/workspace-context";
+import { useOptionalWorkspaceClient } from "@/stores/manager-context";
 import { loadImage } from "@/lib/utils/opfs.ts";
 import { hasBackground } from "@/types/data-model";
 import {
@@ -28,8 +29,17 @@ export function BackgroundPickerDialog({
   onUploadBackground,
 }: BackgroundPickerDialogProps) {
   const { workspace, workspaceId } = useWorkspace();
+  const client = useOptionalWorkspaceClient();
   const [bgUrls, setBgUrls] = useState<Record<string, string>>({});
+  const [imageSyncGen, bumpImageSyncGen] = useReducer((c: number) => c + 1, 0);
   const uploadInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const handler = () => bumpImageSyncGen();
+    window.addEventListener("image-synced", handler);
+    return () => window.removeEventListener("image-synced", handler);
+  }, [open]);
 
   useEffect(() => {
     if (!open || !workspace) {
@@ -43,7 +53,11 @@ export function BackgroundPickerDialog({
 
     Promise.all(
       projects.map(async (p) => {
-        const url = p.backgroundVersion ? await loadImage(workspaceId, p.backgroundVersion) : null;
+        const url = p.backgroundVersion
+          ? client
+            ? await client.images.loadOrFetch(p.backgroundVersion)
+            : await loadImage(workspaceId, p.backgroundVersion)
+          : null;
         if (url && !cancelled) {
           urls[p.id] = url;
         }
@@ -59,7 +73,7 @@ export function BackgroundPickerDialog({
       Object.values(urls).forEach((url) => URL.revokeObjectURL(url));
       setBgUrls({});
     };
-  }, [open, workspace, workspaceId]);
+  }, [open, workspace, workspaceId, client, imageSyncGen]);
 
   if (!workspace) return null;
 

@@ -1,9 +1,10 @@
 import { Trash2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { Project } from "@/types/data-model";
-import { useEffect, useState, type HTMLAttributes } from "react";
+import { useEffect, useReducer, useState, type HTMLAttributes } from "react";
 import { useProjectPreview } from "@/hooks/use-project-preview";
 import { loadImage } from "@/lib/utils/opfs.ts";
+import { useOptionalWorkspaceClient } from "@/stores/manager-context";
 
 type ProjectCardProps = HTMLAttributes<HTMLDivElement> & {
   project: Project;
@@ -90,7 +91,21 @@ export function ProjectCard({
 }: ProjectCardProps) {
   const { t } = useTranslation("projects");
   const { previewUrl, loading } = useProjectPreview(workspaceId, project);
+  const client = useOptionalWorkspaceClient();
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
+  const [imageSyncGen, bumpImageSyncGen] = useReducer((c: number) => c + 1, 0);
+
+  useEffect(() => {
+    const logoVersion = project.logoVersion;
+    if (!logoVersion) return;
+    const handler = (e: Event) => {
+      if ((e as CustomEvent).detail?.uuid === logoVersion) {
+        bumpImageSyncGen();
+      }
+    };
+    window.addEventListener("image-synced", handler);
+    return () => window.removeEventListener("image-synced", handler);
+  }, [project.logoVersion]);
 
   useEffect(() => {
     if (!project.logoVersion) {
@@ -98,7 +113,10 @@ export function ProjectCard({
       return;
     }
     let revoked = false;
-    loadImage(workspaceId, project.logoVersion).then((url) => {
+    const loadLogo = client
+      ? client.images.loadOrFetch(project.logoVersion)
+      : loadImage(workspaceId, project.logoVersion);
+    loadLogo.then((url) => {
       if (!revoked) setLogoUrl(url);
     });
     return () => {
@@ -108,7 +126,7 @@ export function ProjectCard({
         return null;
       });
     };
-  }, [workspaceId, project.logoVersion]);
+  }, [workspaceId, project.logoVersion, client, imageSyncGen]);
 
   return (
     <div className="project-card" role="button" tabIndex={0} onClick={onClick} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onClick(); } }} {...props}>
