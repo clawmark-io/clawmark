@@ -120,6 +120,12 @@ export function WorkspacesScreen() {
   }, [pendingNewWorkspace, clearNewWorkspaceRequest]);
   const [deleteEntry, setDeleteEntry] = useState<WorkspaceListEntry | null>(null);
 
+  useEffect(() => {
+    if (!deleteEntry) return;
+    if (workspaces.some((entry) => entry.workspaceId === deleteEntry.workspaceId)) return;
+    setDeleteEntry(null);
+  }, [deleteEntry, workspaces]);
+
   const sorted = [...workspaces].toSorted((a, b) => b.lastAccessedAt - a.lastAccessedAt);
 
   return (

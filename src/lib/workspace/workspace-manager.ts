@@ -5,7 +5,7 @@ import type { FilesystemDriver, PersistenceDriver, WorkspaceListEntry, Workspace
 import { createStore, readOnly } from "@/lib/store.ts";
 import type { ReadableStore } from "@/lib/store.ts";
 import { WorkspaceClient } from "@/lib/workspace/workspace-client.ts";
-import { createWorkspaceRepo, createWorkspaceDoc, claimRepo } from "@/lib/automerge/repo.ts";
+import { createWorkspaceRepo, createWorkspaceDoc, claimRepo, parkRepo } from "@/lib/automerge/repo.ts";
 import { logCloudSync } from "@/lib/cloud-sync/cloud-sync-log.ts";
 import { clearWorkspaceMemoryCache } from "@/lib/preview-cache.ts";
 
@@ -67,7 +67,7 @@ export class WorkspacesManager {
     this.workspacesStore.update((list) => [...list, entry]);
     this.config.persistence.saveWorkspaceList(this.workspacesStore.get());
 
-    repo.shutdown();
+    parkRepo(databaseName, repo);
     return entry;
   }
 

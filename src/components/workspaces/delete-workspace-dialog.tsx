@@ -24,6 +24,7 @@ export function DeleteWorkspaceDialog({ open, onOpenChange, entry }: DeleteWorks
   const manager = useManager();
   const [confirmText, setConfirmText] = useState("");
   const [copied, setCopied] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const settings = manager.getWorkspaceLocalSettings(entry.workspaceId);
   const isSynced = settings.servers.length > 0;
   const matches = confirmText === entry.name;
@@ -38,16 +39,22 @@ export function DeleteWorkspaceDialog({ open, onOpenChange, entry }: DeleteWorks
     if (!isOpen) {
       setConfirmText("");
       setCopied(false);
+      setDeleting(false);
     }
     onOpenChange(isOpen);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!matches) return;
+    if (!matches || deleting) return;
 
-    await manager.deleteWorkspace(entry.workspaceId);
-    handleClose(false);
+    setDeleting(true);
+    try {
+      await manager.deleteWorkspace(entry.workspaceId);
+      handleClose(false);
+    } catch {
+      setDeleting(false);
+    }
   };
 
   return (
@@ -92,13 +99,14 @@ export function DeleteWorkspaceDialog({ open, onOpenChange, entry }: DeleteWorks
             value={confirmText}
             onChange={(e) => setConfirmText(e.target.value)}
             placeholder={t("enterWorkspaceName")}
+            disabled={deleting}
             autoFocus
           />
           <DialogFooter className="mt-4">
-            <button type="button" className="btn btn-outline" onClick={() => handleClose(false)}>
+            <button type="button" className="btn btn-outline" onClick={() => handleClose(false)} disabled={deleting}>
               {t("cancelButton", { ns: "common" })}
             </button>
-            <button type="submit" className="btn btn-error" disabled={!matches}>
+            <button type="submit" className="btn btn-error" disabled={!matches || deleting}>
               {t("deleteButton", { ns: "common" })}
             </button>
           </DialogFooter>

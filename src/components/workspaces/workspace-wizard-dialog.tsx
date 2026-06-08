@@ -2,6 +2,7 @@ import { generateId } from "@/lib/utils/id";
 import { useState, useEffect, useRef, useCallback } from "react";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
+import { useNavigate } from "@tanstack/react-router";
 import { ArrowLeft, Plus, RefreshCw, Download, Globe, Cloud, Copy, Loader2, CheckCircle2, XCircle } from "lucide-react";
 import { BrowserWebSocketClientAdapter } from "@automerge/automerge-repo-network-websocket";
 import type { AnyDocumentId, Repo } from "@automerge/automerge-repo";
@@ -77,7 +78,7 @@ function PathOptionRow({ icon, label, description, onClick }: PathOption) {
 
 // --- Create new workspace step ---
 
-function CreateNewStep({ onBack, onCreated }: { onBack: () => void; onCreated: () => void }) {
+function CreateNewStep({ onBack, onCreated }: { onBack: () => void; onCreated: (workspaceId: string) => void }) {
   const { t } = useTranslation("projects");
   const [name, setName] = useState("New Workspace");
   const inputRef = useRef<HTMLInputElement>(null);
@@ -97,8 +98,7 @@ function CreateNewStep({ onBack, onCreated }: { onBack: () => void; onCreated: (
       : { theme: lastUsedTheme.theme };
 
     const entry = manager.createWorkspace(trimmed, themeSettings);
-    manager.setActiveWorkspaceId(entry.workspaceId);
-    onCreated();
+    onCreated(entry.workspaceId);
   };
 
   return (
@@ -727,6 +727,7 @@ export function WorkspaceWizardDialog({ open, onOpenChange, forceOpen }: Workspa
   const { t } = useTranslation("projects");
   const [step, setStep] = useState<WizardStep>({ type: "choose-path" });
   const manager = useManager();
+  const navigate = useNavigate();
 
   // Reset step when dialog opens
   useEffect(() => {
@@ -741,6 +742,12 @@ export function WorkspaceWizardDialog({ open, onOpenChange, forceOpen }: Workspa
     if (!value && forceOpen) return;
     onOpenChange(value);
   };
+
+  const openWorkspace = useCallback((workspaceId: string) => {
+    manager.setActiveWorkspaceId(workspaceId);
+    onOpenChange(false);
+    navigate({ to: "/w/$workspaceId", params: { workspaceId } });
+  }, [manager, navigate, onOpenChange]);
 
   // --- Import logic ---
 
@@ -917,7 +924,7 @@ export function WorkspaceWizardDialog({ open, onOpenChange, forceOpen }: Workspa
         return (
           <CreateNewStep
             onBack={() => setStep({ type: "choose-path" })}
-            onCreated={handleClose}
+            onCreated={openWorkspace}
           />
         );
 
@@ -947,7 +954,7 @@ export function WorkspaceWizardDialog({ open, onOpenChange, forceOpen }: Workspa
             workspaceName={step.workspaceName}
             documentUrl={step.documentUrl}
             onError={(error) => setStep({ type: "sync-error", serverValues: step.serverValues, error })}
-            onDone={handleClose}
+            onDone={() => openWorkspace(step.workspaceId)}
           />
         );
 
@@ -991,7 +998,7 @@ export function WorkspaceWizardDialog({ open, onOpenChange, forceOpen }: Workspa
             workspaceName={step.workspaceName}
             documentUrl={step.documentUrl}
             onError={(error) => setStep({ type: "cloud-sync-error", error })}
-            onDone={handleClose}
+            onDone={() => openWorkspace(step.workspaceId)}
           />
         );
 
@@ -1072,8 +1079,7 @@ export function WorkspaceWizardDialog({ open, onOpenChange, forceOpen }: Workspa
                   type="button"
                   className="btn btn-primary"
                   onClick={() => {
-                    if (step.workspaceId) manager.setActiveWorkspaceId(step.workspaceId);
-                    handleClose();
+                    if (step.workspaceId) openWorkspace(step.workspaceId);
                   }}
                 >
                   {t("doneButton", { ns: "common" })}
