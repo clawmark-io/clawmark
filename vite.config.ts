@@ -6,10 +6,14 @@ import wasm from "vite-plugin-wasm";
 import { TanStackRouterVite } from "@tanstack/router-plugin/vite";
 
 // @ts-expect-error process is a nodejs global
-const host = process.env.TAURI_DEV_HOST;
+const env = process.env;
+const host = env.TAURI_DEV_HOST;
+const base = env.VITE_BASE_PATH ?? "/";
 
 // https://vite.dev/config/
 export default defineConfig(async () => ({
+  base,
+
   plugins: [
     TanStackRouterVite({
       routesDirectory: "./src/routes",

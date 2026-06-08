@@ -15,6 +15,7 @@ npm run tauri build        # Full desktop app build
 - This is a frontend-only app. Use browser native APIs, not Tauri backend commands, unless explicitly asked.
 - TypeScript strict mode is enabled with no unused locals/parameters.
 - Never use barrel files!
+- Avoid hardcoding root-base URLs for static assets; use Vite base-aware URLs so the app can be hosted under a non-root path.
 
 ## Architecture
 
