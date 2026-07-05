@@ -5,6 +5,7 @@ import i18n from "@/i18n";
 type DatePickerProps = {
   value: number | null;
   onChange: (value: number | null) => void;
+  endOfDay?: boolean;
 };
 
 function addDays(date: Date, days: number): Date {
@@ -19,6 +20,12 @@ function setToEndOfDay(date: Date): Date {
   return result;
 }
 
+function setToStartOfDay(date: Date): Date {
+  const result = new Date(date);
+  result.setHours(0, 0, 0, 0);
+  return result;
+}
+
 function formatForInput(date: Date): string {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, "0");
@@ -26,7 +33,7 @@ function formatForInput(date: Date): string {
   return `${year}-${month}-${day}`;
 }
 
-export function DatePicker({ value, onChange }: DatePickerProps) {
+export function DatePicker({ value, onChange, endOfDay = true }: DatePickerProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [customDate, setCustomDate] = useState<string>("");
   const [focusedIndex, setFocusedIndex] = useState<number>(0);
@@ -57,7 +64,8 @@ export function DatePicker({ value, onChange }: DatePickerProps) {
   }, [isOpen]);
 
   const handlePreset = (days: number) => {
-    const date = setToEndOfDay(addDays(new Date(), days));
+    const baseDate = addDays(new Date(), days);
+    const date = endOfDay ? setToEndOfDay(baseDate) : setToStartOfDay(baseDate);
     onChange(date.getTime());
     setIsOpen(false);
     triggerRef.current?.focus();
@@ -66,7 +74,8 @@ export function DatePicker({ value, onChange }: DatePickerProps) {
   const handleCustomDate = (dateString: string) => {
     setCustomDate(dateString);
     if (dateString) {
-      const date = setToEndOfDay(new Date(dateString));
+      const baseDate = new Date(dateString);
+      const date = endOfDay ? setToEndOfDay(baseDate) : setToStartOfDay(baseDate);
       onChange(date.getTime());
     }
   };

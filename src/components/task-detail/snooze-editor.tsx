@@ -17,7 +17,7 @@ export function SnoozeEditor({ snoozeUntil, dueDate, onUpdate, className = "flex
   return (
     <div className={`${className} relative`}>
       <FieldLabel icon={AlarmClockOff}>{t("snoozeUntil")}</FieldLabel>
-      <DatePicker value={snoozeUntil} onChange={onUpdate} />
+      <DatePicker value={snoozeUntil} onChange={onUpdate} endOfDay={false} />
       {showWarning ? (
         <p className="absolute top-full mt-1 flex items-center gap-1.5 text-xs text-[var(--warning-text)] whitespace-nowrap">
           <TriangleAlert size={12} className="shrink-0" />

@@ -2,6 +2,7 @@ import { useState, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "@tanstack/react-router";
 import { useWorkspace } from "@/stores/workspace-context";
+import { useSnoozeRefresh } from "@/hooks/use-snooze-refresh";
 import { collectUpcomingTasks, groupByBucket, filterByMode, BUCKET_CONFIG } from "@/lib/upcoming-utils";
 import type { UpcomingTask, UpcomingFilterMode } from "@/lib/upcoming-utils";
 import type { Tag, Workspace } from "@/types/data-model";
@@ -83,12 +84,15 @@ export function UpcomingView() {
     return collectUpcomingTasks(workspace);
   }, [workspace]);
 
+  const snoozeUntilValues = useMemo(() => allUpcoming.map((item) => item.task.snoozeUntil), [allUpcoming]);
+  const snoozeRefreshVersion = useSnoozeRefresh(snoozeUntilValues, !showSnoozed);
+
   const filtered = useMemo(
     () => {
       const base = filterUpcomingTasks(allUpcoming, searchQuery, projectFilter, showSnoozed, selectedTagLabels, workspace!);
       return filterByMode(base, filterMode);
     },
-    [allUpcoming, searchQuery, projectFilter, showSnoozed, selectedTagLabels, workspace, filterMode],
+    [allUpcoming, searchQuery, projectFilter, showSnoozed, selectedTagLabels, workspace, filterMode, snoozeRefreshVersion],
   );
 
   const grouped = useMemo(() => groupByBucket(filtered), [filtered]);

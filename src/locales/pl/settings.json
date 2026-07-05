@@ -44,6 +44,7 @@
   "deviceAuthRequesting": "Łączenie z serwerem...",
   "deviceAuthOpenBrowser": "Otwarto okno przeglądarki. Wpisz poniższy kod, aby potwierdzić logowanie:",
   "deviceAuthWaiting": "Oczekiwanie na potwierdzenie...",
+  "deviceAuthOpenWindowButton": "Otw\u00f3rz okno autoryzacji",
   "deviceAuthExpired": "Kod logowania wygasł. Spróbuj ponownie.",
   "deviceAuthRefreshFailed": "Twoja sesja wygasła. Zaloguj się ponownie.",
   "deviceAuthRefreshError": "Odświeżanie tokenu nie powiodło się: {{error}}",

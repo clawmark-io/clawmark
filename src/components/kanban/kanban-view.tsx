@@ -1,6 +1,7 @@
 import { useState, useMemo, type ReactNode } from "react";
 import { useParams } from "@tanstack/react-router";
 import { useWorkspace } from "@/stores/workspace-context";
+import { useSnoozeRefresh } from "@/hooks/use-snooze-refresh";
 import type { Task } from "@/types/data-model";
 import { KanbanToolbar } from "./kanban-toolbar";
 import { KanbanBoard } from "./kanban-board";
@@ -65,9 +66,12 @@ export function KanbanView({ renderHeaderActions }: KanbanViewProps) {
     return Object.values(project.tasks);
   }, [project]);
 
+  const snoozeUntilValues = useMemo(() => allTasks.map((task) => task.snoozeUntil), [allTasks]);
+  const snoozeRefreshVersion = useSnoozeRefresh(snoozeUntilValues, !showSnoozed);
+
   const filteredTasks = useMemo(() => {
     return filterTasks(allTasks, searchQuery, completedFilter, showSnoozed, selectedTagIds);
-  }, [allTasks, searchQuery, completedFilter, showSnoozed, selectedTagIds]);
+  }, [allTasks, searchQuery, completedFilter, showSnoozed, selectedTagIds, snoozeRefreshVersion]);
 
   const tasksByColumn = useMemo(() => {
     const map = new Map<string, Task[]>();

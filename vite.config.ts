@@ -5,7 +5,6 @@ import tailwindcss from "@tailwindcss/vite";
 import wasm from "vite-plugin-wasm";
 import { TanStackRouterVite } from "@tanstack/router-plugin/vite";
 
-// @ts-expect-error process is a nodejs global
 const env = process.env;
 const host = env.TAURI_DEV_HOST;
 const base = env.VITE_BASE_PATH ?? "/";
@@ -36,14 +35,14 @@ export default defineConfig(async () => ({
   clearScreen: false,
   // 2. tauri expects a fixed port, fail if that port is not available
   server: {
-    port: 1420,
+    port: 1460,
     strictPort: true,
     host: host || false,
     hmr: host
       ? {
           protocol: "ws",
           host,
-          port: 1421,
+          port: 1461,
         }
       : undefined,
     watch: {

@@ -18,6 +18,7 @@ import {
 import { restrictToVerticalAxis, restrictToParentElement } from "@dnd-kit/modifiers";
 import { useParams } from "@tanstack/react-router";
 import { useWorkspace } from "@/stores/workspace-context";
+import { useSnoozeRefresh } from "@/hooks/use-snooze-refresh";
 import { reorderTask } from "@/lib/workspace/actions/tasks/reorder-task";
 import type { Column, Task } from "@/types/data-model";
 import { TasksToolbar } from "./tasks-toolbar";
@@ -108,11 +109,14 @@ export function TasksView() {
     return Object.values(project.tasks);
   }, [project]);
 
+  const snoozeUntilValues = useMemo(() => allTasks.map((task) => task.snoozeUntil), [allTasks]);
+  const snoozeRefreshVersion = useSnoozeRefresh(snoozeUntilValues, !showSnoozed);
+
   const tasks = useMemo(() => {
     const columns = project?.columns ?? [];
     const filtered = filterTasks(allTasks, searchQuery, completedFilter, showArchived, showSnoozed, selectedTagIds, selectedColumnIds, columns);
     return sortTasks(filtered, sortBy, sortReversed);
-  }, [allTasks, searchQuery, completedFilter, sortBy, sortReversed, showArchived, showSnoozed, selectedTagIds, selectedColumnIds, project?.columns]);
+  }, [allTasks, searchQuery, completedFilter, sortBy, sortReversed, showArchived, showSnoozed, selectedTagIds, selectedColumnIds, project?.columns, snoozeRefreshVersion]);
 
   const archivedCount = allTasks.filter((task) => task.archived).length;
 

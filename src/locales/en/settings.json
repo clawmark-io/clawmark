@@ -44,6 +44,7 @@
   "deviceAuthRequesting": "Connecting to server...",
   "deviceAuthOpenBrowser": "A browser window has been opened. Enter the code below to confirm sign-in:",
   "deviceAuthWaiting": "Waiting for confirmation...",
+  "deviceAuthOpenWindowButton": "Open authorization window",
   "deviceAuthExpired": "The sign-in code has expired. Please try again.",
   "deviceAuthRefreshFailed": "Your session has expired. Please sign in again.",
   "deviceAuthRefreshError": "Token refresh failed: {{error}}",
