@@ -8,15 +8,20 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@automerge/automerge": "^3.2.4",
-    "@automerge/automerge-repo": "^2.5.1",
-    "@automerge/automerge-repo-network-websocket": "^2.5.3",
-    "commander": "^13.0.0",
-    "nanoid": "^5.1.6",
-    "yaml": "^2.7.0"
+    "@automerge/automerge": "^3.5.0",
+    "@automerge/automerge-repo": "^2.5.6",
+    "@automerge/automerge-repo-network-websocket": "^2.5.6",
+    "commander": "^15.0.0",
+    "nanoid": "^6.0.1",
+    "yaml": "^2.9.1"
   },
   "devDependencies": {
-    "@types/bun": "latest",
-    "typescript": "~5.8.3"
+    "@types/bun": "1.4.2",
+    "typescript": "~7.0.2"
+  },
+  "packageManager": "npm@11.17.0",
+  "engines": {
+    "node": ">=22.12.0",
+    "npm": ">=11.10.0"
   }
 }

@@ -53,6 +53,7 @@ export class WorkspaceRepoManager {
     const existing = this.workspaces.get(workspaceId);
     if (existing) {
       this.cancelRelease(existing);
+      await existing.repo.storageSubsystem?.id();
       return existing;
     }
 
@@ -92,6 +93,10 @@ export class WorkspaceRepoManager {
       handleCleanups: new Map(),
     };
     this.workspaces.set(workspaceId, entry);
+
+    // Storage initialization registers the adapter's WebSocket message listeners.
+    // Wait before accepting the client's initial handshake.
+    await repo.storageSubsystem?.id();
 
     // Pre-load workspace document from storage so it can be shared with connecting peers.
     // Without this, the repo's handle map is empty and sharePolicy has nothing to share.

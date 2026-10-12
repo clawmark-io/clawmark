@@ -59,6 +59,8 @@ RUN curl --proto '=https' --tlsv1.2 -fsSL https://sh.rustup.rs -o /tmp/rustup-in
     i686-linux-android \
     x86_64-linux-android
 
+RUN npm install --global npm@11.17.0 --min-release-age=14
+
 WORKDIR /workspace
 
 CMD ["bash", "-lc", "npm ci && npm run tauri -- android build --apk"]

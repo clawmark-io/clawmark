@@ -13,21 +13,21 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as WIndexRouteImport } from './routes/w/index'
 import { Route as WWorkspaceIdRouteRouteImport } from './routes/w/$workspaceId/route'
 import { Route as WWorkspaceIdIndexRouteImport } from './routes/w/$workspaceId/index'
-import { Route as WWorkspaceIdUpcomingRouteImport } from './routes/w/$workspaceId/upcoming'
-import { Route as WWorkspaceIdSyncRouteImport } from './routes/w/$workspaceId/sync'
-import { Route as WWorkspaceIdSettingsRouteImport } from './routes/w/$workspaceId/settings'
 import { Route as WWorkspaceIdProjectsRouteImport } from './routes/w/$workspaceId/projects'
+import { Route as WWorkspaceIdSettingsRouteImport } from './routes/w/$workspaceId/settings'
+import { Route as WWorkspaceIdSyncRouteImport } from './routes/w/$workspaceId/sync'
+import { Route as WWorkspaceIdUpcomingRouteImport } from './routes/w/$workspaceId/upcoming'
 import { Route as WWorkspaceIdPProjectIdRouteRouteImport } from './routes/w/$workspaceId/p/$projectId/route'
 import { Route as WWorkspaceIdPProjectIdIndexRouteImport } from './routes/w/$workspaceId/p/$projectId/index'
-import { Route as WWorkspaceIdPProjectIdWorkspaceSettingsRouteImport } from './routes/w/$workspaceId/p/$projectId/workspace-settings'
-import { Route as WWorkspaceIdPProjectIdSyncRouteImport } from './routes/w/$workspaceId/p/$projectId/sync'
-import { Route as WWorkspaceIdPProjectIdSettingsRouteImport } from './routes/w/$workspaceId/p/$projectId/settings'
-import { Route as WWorkspaceIdPProjectIdTasksRouteRouteImport } from './routes/w/$workspaceId/p/$projectId/tasks/route'
 import { Route as WWorkspaceIdPProjectIdKanbanRouteRouteImport } from './routes/w/$workspaceId/p/$projectId/kanban/route'
-import { Route as WWorkspaceIdPProjectIdTasksIndexRouteImport } from './routes/w/$workspaceId/p/$projectId/tasks/index'
+import { Route as WWorkspaceIdPProjectIdSettingsRouteImport } from './routes/w/$workspaceId/p/$projectId/settings'
+import { Route as WWorkspaceIdPProjectIdSyncRouteImport } from './routes/w/$workspaceId/p/$projectId/sync'
+import { Route as WWorkspaceIdPProjectIdTasksRouteRouteImport } from './routes/w/$workspaceId/p/$projectId/tasks/route'
+import { Route as WWorkspaceIdPProjectIdWorkspaceSettingsRouteImport } from './routes/w/$workspaceId/p/$projectId/workspace-settings'
 import { Route as WWorkspaceIdPProjectIdKanbanIndexRouteImport } from './routes/w/$workspaceId/p/$projectId/kanban/index'
-import { Route as WWorkspaceIdPProjectIdTasksTaskIdRouteImport } from './routes/w/$workspaceId/p/$projectId/tasks/$taskId'
 import { Route as WWorkspaceIdPProjectIdKanbanTaskIdRouteImport } from './routes/w/$workspaceId/p/$projectId/kanban/$taskId'
+import { Route as WWorkspaceIdPProjectIdTasksIndexRouteImport } from './routes/w/$workspaceId/p/$projectId/tasks/index'
+import { Route as WWorkspaceIdPProjectIdTasksTaskIdRouteImport } from './routes/w/$workspaceId/p/$projectId/tasks/$taskId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -49,14 +49,9 @@ const WWorkspaceIdIndexRoute = WWorkspaceIdIndexRouteImport.update({
   path: '/',
   getParentRoute: () => WWorkspaceIdRouteRoute,
 } as any)
-const WWorkspaceIdUpcomingRoute = WWorkspaceIdUpcomingRouteImport.update({
-  id: '/upcoming',
-  path: '/upcoming',
-  getParentRoute: () => WWorkspaceIdRouteRoute,
-} as any)
-const WWorkspaceIdSyncRoute = WWorkspaceIdSyncRouteImport.update({
-  id: '/sync',
-  path: '/sync',
+const WWorkspaceIdProjectsRoute = WWorkspaceIdProjectsRouteImport.update({
+  id: '/projects',
+  path: '/projects',
   getParentRoute: () => WWorkspaceIdRouteRoute,
 } as any)
 const WWorkspaceIdSettingsRoute = WWorkspaceIdSettingsRouteImport.update({
@@ -64,9 +59,14 @@ const WWorkspaceIdSettingsRoute = WWorkspaceIdSettingsRouteImport.update({
   path: '/settings',
   getParentRoute: () => WWorkspaceIdRouteRoute,
 } as any)
-const WWorkspaceIdProjectsRoute = WWorkspaceIdProjectsRouteImport.update({
-  id: '/projects',
-  path: '/projects',
+const WWorkspaceIdSyncRoute = WWorkspaceIdSyncRouteImport.update({
+  id: '/sync',
+  path: '/sync',
+  getParentRoute: () => WWorkspaceIdRouteRoute,
+} as any)
+const WWorkspaceIdUpcomingRoute = WWorkspaceIdUpcomingRouteImport.update({
+  id: '/upcoming',
+  path: '/upcoming',
   getParentRoute: () => WWorkspaceIdRouteRoute,
 } as any)
 const WWorkspaceIdPProjectIdRouteRoute =
@@ -81,16 +81,10 @@ const WWorkspaceIdPProjectIdIndexRoute =
     path: '/',
     getParentRoute: () => WWorkspaceIdPProjectIdRouteRoute,
   } as any)
-const WWorkspaceIdPProjectIdWorkspaceSettingsRoute =
-  WWorkspaceIdPProjectIdWorkspaceSettingsRouteImport.update({
-    id: '/workspace-settings',
-    path: '/workspace-settings',
-    getParentRoute: () => WWorkspaceIdPProjectIdRouteRoute,
-  } as any)
-const WWorkspaceIdPProjectIdSyncRoute =
-  WWorkspaceIdPProjectIdSyncRouteImport.update({
-    id: '/sync',
-    path: '/sync',
+const WWorkspaceIdPProjectIdKanbanRouteRoute =
+  WWorkspaceIdPProjectIdKanbanRouteRouteImport.update({
+    id: '/kanban',
+    path: '/kanban',
     getParentRoute: () => WWorkspaceIdPProjectIdRouteRoute,
   } as any)
 const WWorkspaceIdPProjectIdSettingsRoute =
@@ -99,23 +93,23 @@ const WWorkspaceIdPProjectIdSettingsRoute =
     path: '/settings',
     getParentRoute: () => WWorkspaceIdPProjectIdRouteRoute,
   } as any)
+const WWorkspaceIdPProjectIdSyncRoute =
+  WWorkspaceIdPProjectIdSyncRouteImport.update({
+    id: '/sync',
+    path: '/sync',
+    getParentRoute: () => WWorkspaceIdPProjectIdRouteRoute,
+  } as any)
 const WWorkspaceIdPProjectIdTasksRouteRoute =
   WWorkspaceIdPProjectIdTasksRouteRouteImport.update({
     id: '/tasks',
     path: '/tasks',
     getParentRoute: () => WWorkspaceIdPProjectIdRouteRoute,
   } as any)
-const WWorkspaceIdPProjectIdKanbanRouteRoute =
-  WWorkspaceIdPProjectIdKanbanRouteRouteImport.update({
-    id: '/kanban',
-    path: '/kanban',
+const WWorkspaceIdPProjectIdWorkspaceSettingsRoute =
+  WWorkspaceIdPProjectIdWorkspaceSettingsRouteImport.update({
+    id: '/workspace-settings',
+    path: '/workspace-settings',
     getParentRoute: () => WWorkspaceIdPProjectIdRouteRoute,
-  } as any)
-const WWorkspaceIdPProjectIdTasksIndexRoute =
-  WWorkspaceIdPProjectIdTasksIndexRouteImport.update({
-    id: '/',
-    path: '/',
-    getParentRoute: () => WWorkspaceIdPProjectIdTasksRouteRoute,
   } as any)
 const WWorkspaceIdPProjectIdKanbanIndexRoute =
   WWorkspaceIdPProjectIdKanbanIndexRouteImport.update({
@@ -123,17 +117,23 @@ const WWorkspaceIdPProjectIdKanbanIndexRoute =
     path: '/',
     getParentRoute: () => WWorkspaceIdPProjectIdKanbanRouteRoute,
   } as any)
-const WWorkspaceIdPProjectIdTasksTaskIdRoute =
-  WWorkspaceIdPProjectIdTasksTaskIdRouteImport.update({
-    id: '/$taskId',
-    path: '/$taskId',
-    getParentRoute: () => WWorkspaceIdPProjectIdTasksRouteRoute,
-  } as any)
 const WWorkspaceIdPProjectIdKanbanTaskIdRoute =
   WWorkspaceIdPProjectIdKanbanTaskIdRouteImport.update({
     id: '/$taskId',
     path: '/$taskId',
     getParentRoute: () => WWorkspaceIdPProjectIdKanbanRouteRoute,
+  } as any)
+const WWorkspaceIdPProjectIdTasksIndexRoute =
+  WWorkspaceIdPProjectIdTasksIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => WWorkspaceIdPProjectIdTasksRouteRoute,
+  } as any)
+const WWorkspaceIdPProjectIdTasksTaskIdRoute =
+  WWorkspaceIdPProjectIdTasksTaskIdRouteImport.update({
+    id: '/$taskId',
+    path: '/$taskId',
+    getParentRoute: () => WWorkspaceIdPProjectIdTasksRouteRoute,
   } as any)
 
 export interface FileRoutesByFullPath {
@@ -294,18 +294,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WWorkspaceIdIndexRouteImport
       parentRoute: typeof WWorkspaceIdRouteRoute
     }
-    '/w/$workspaceId/upcoming': {
-      id: '/w/$workspaceId/upcoming'
-      path: '/upcoming'
-      fullPath: '/w/$workspaceId/upcoming'
-      preLoaderRoute: typeof WWorkspaceIdUpcomingRouteImport
-      parentRoute: typeof WWorkspaceIdRouteRoute
-    }
-    '/w/$workspaceId/sync': {
-      id: '/w/$workspaceId/sync'
-      path: '/sync'
-      fullPath: '/w/$workspaceId/sync'
-      preLoaderRoute: typeof WWorkspaceIdSyncRouteImport
+    '/w/$workspaceId/projects': {
+      id: '/w/$workspaceId/projects'
+      path: '/projects'
+      fullPath: '/w/$workspaceId/projects'
+      preLoaderRoute: typeof WWorkspaceIdProjectsRouteImport
       parentRoute: typeof WWorkspaceIdRouteRoute
     }
     '/w/$workspaceId/settings': {
@@ -315,11 +308,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WWorkspaceIdSettingsRouteImport
       parentRoute: typeof WWorkspaceIdRouteRoute
     }
-    '/w/$workspaceId/projects': {
-      id: '/w/$workspaceId/projects'
-      path: '/projects'
-      fullPath: '/w/$workspaceId/projects'
-      preLoaderRoute: typeof WWorkspaceIdProjectsRouteImport
+    '/w/$workspaceId/sync': {
+      id: '/w/$workspaceId/sync'
+      path: '/sync'
+      fullPath: '/w/$workspaceId/sync'
+      preLoaderRoute: typeof WWorkspaceIdSyncRouteImport
+      parentRoute: typeof WWorkspaceIdRouteRoute
+    }
+    '/w/$workspaceId/upcoming': {
+      id: '/w/$workspaceId/upcoming'
+      path: '/upcoming'
+      fullPath: '/w/$workspaceId/upcoming'
+      preLoaderRoute: typeof WWorkspaceIdUpcomingRouteImport
       parentRoute: typeof WWorkspaceIdRouteRoute
     }
     '/w/$workspaceId/p/$projectId': {
@@ -336,18 +336,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WWorkspaceIdPProjectIdIndexRouteImport
       parentRoute: typeof WWorkspaceIdPProjectIdRouteRoute
     }
-    '/w/$workspaceId/p/$projectId/workspace-settings': {
-      id: '/w/$workspaceId/p/$projectId/workspace-settings'
-      path: '/workspace-settings'
-      fullPath: '/w/$workspaceId/p/$projectId/workspace-settings'
-      preLoaderRoute: typeof WWorkspaceIdPProjectIdWorkspaceSettingsRouteImport
-      parentRoute: typeof WWorkspaceIdPProjectIdRouteRoute
-    }
-    '/w/$workspaceId/p/$projectId/sync': {
-      id: '/w/$workspaceId/p/$projectId/sync'
-      path: '/sync'
-      fullPath: '/w/$workspaceId/p/$projectId/sync'
-      preLoaderRoute: typeof WWorkspaceIdPProjectIdSyncRouteImport
+    '/w/$workspaceId/p/$projectId/kanban': {
+      id: '/w/$workspaceId/p/$projectId/kanban'
+      path: '/kanban'
+      fullPath: '/w/$workspaceId/p/$projectId/kanban'
+      preLoaderRoute: typeof WWorkspaceIdPProjectIdKanbanRouteRouteImport
       parentRoute: typeof WWorkspaceIdPProjectIdRouteRoute
     }
     '/w/$workspaceId/p/$projectId/settings': {
@@ -357,6 +350,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WWorkspaceIdPProjectIdSettingsRouteImport
       parentRoute: typeof WWorkspaceIdPProjectIdRouteRoute
     }
+    '/w/$workspaceId/p/$projectId/sync': {
+      id: '/w/$workspaceId/p/$projectId/sync'
+      path: '/sync'
+      fullPath: '/w/$workspaceId/p/$projectId/sync'
+      preLoaderRoute: typeof WWorkspaceIdPProjectIdSyncRouteImport
+      parentRoute: typeof WWorkspaceIdPProjectIdRouteRoute
+    }
     '/w/$workspaceId/p/$projectId/tasks': {
       id: '/w/$workspaceId/p/$projectId/tasks'
       path: '/tasks'
@@ -364,19 +364,12 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WWorkspaceIdPProjectIdTasksRouteRouteImport
       parentRoute: typeof WWorkspaceIdPProjectIdRouteRoute
     }
-    '/w/$workspaceId/p/$projectId/kanban': {
-      id: '/w/$workspaceId/p/$projectId/kanban'
-      path: '/kanban'
-      fullPath: '/w/$workspaceId/p/$projectId/kanban'
-      preLoaderRoute: typeof WWorkspaceIdPProjectIdKanbanRouteRouteImport
+    '/w/$workspaceId/p/$projectId/workspace-settings': {
+      id: '/w/$workspaceId/p/$projectId/workspace-settings'
+      path: '/workspace-settings'
+      fullPath: '/w/$workspaceId/p/$projectId/workspace-settings'
+      preLoaderRoute: typeof WWorkspaceIdPProjectIdWorkspaceSettingsRouteImport
       parentRoute: typeof WWorkspaceIdPProjectIdRouteRoute
-    }
-    '/w/$workspaceId/p/$projectId/tasks/': {
-      id: '/w/$workspaceId/p/$projectId/tasks/'
-      path: '/'
-      fullPath: '/w/$workspaceId/p/$projectId/tasks/'
-      preLoaderRoute: typeof WWorkspaceIdPProjectIdTasksIndexRouteImport
-      parentRoute: typeof WWorkspaceIdPProjectIdTasksRouteRoute
     }
     '/w/$workspaceId/p/$projectId/kanban/': {
       id: '/w/$workspaceId/p/$projectId/kanban/'
@@ -385,19 +378,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WWorkspaceIdPProjectIdKanbanIndexRouteImport
       parentRoute: typeof WWorkspaceIdPProjectIdKanbanRouteRoute
     }
-    '/w/$workspaceId/p/$projectId/tasks/$taskId': {
-      id: '/w/$workspaceId/p/$projectId/tasks/$taskId'
-      path: '/$taskId'
-      fullPath: '/w/$workspaceId/p/$projectId/tasks/$taskId'
-      preLoaderRoute: typeof WWorkspaceIdPProjectIdTasksTaskIdRouteImport
-      parentRoute: typeof WWorkspaceIdPProjectIdTasksRouteRoute
-    }
     '/w/$workspaceId/p/$projectId/kanban/$taskId': {
       id: '/w/$workspaceId/p/$projectId/kanban/$taskId'
       path: '/$taskId'
       fullPath: '/w/$workspaceId/p/$projectId/kanban/$taskId'
       preLoaderRoute: typeof WWorkspaceIdPProjectIdKanbanTaskIdRouteImport
       parentRoute: typeof WWorkspaceIdPProjectIdKanbanRouteRoute
+    }
+    '/w/$workspaceId/p/$projectId/tasks/': {
+      id: '/w/$workspaceId/p/$projectId/tasks/'
+      path: '/'
+      fullPath: '/w/$workspaceId/p/$projectId/tasks/'
+      preLoaderRoute: typeof WWorkspaceIdPProjectIdTasksIndexRouteImport
+      parentRoute: typeof WWorkspaceIdPProjectIdTasksRouteRoute
+    }
+    '/w/$workspaceId/p/$projectId/tasks/$taskId': {
+      id: '/w/$workspaceId/p/$projectId/tasks/$taskId'
+      path: '/$taskId'
+      fullPath: '/w/$workspaceId/p/$projectId/tasks/$taskId'
+      preLoaderRoute: typeof WWorkspaceIdPProjectIdTasksTaskIdRouteImport
+      parentRoute: typeof WWorkspaceIdPProjectIdTasksRouteRoute
     }
   }
 }

@@ -69,6 +69,9 @@ jobs:
             patchelf \
             xdg-utils
 
+      - name: Setup npm with release-age support
+        run: npm install --global npm@11.17.0 --min-release-age=14
+
       - name: Install dependencies
         run: npm ci
 
@@ -121,6 +124,9 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
         with:
           targets: aarch64-linux-android,armv7-linux-androideabi,i686-linux-android,x86_64-linux-android
+
+      - name: Setup npm with release-age support
+        run: npm install --global npm@11.17.0 --min-release-age=14
 
       - name: Install dependencies
         run: npm ci

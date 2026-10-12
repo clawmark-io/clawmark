@@ -1,0 +1,3 @@
+[install]
+# Two weeks, in seconds; applies to direct and transitive dependencies.
+minimumReleaseAge = 1209600
